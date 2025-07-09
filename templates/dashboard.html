@@ -121,7 +121,7 @@
                         <div class="list-group-item d-flex justify-content-between align-items-center border-0">
                             <div>
                                 <h6 class="mb-1">{{ item[0] }}</h6>
-                                <small class="text-muted">Added </small>
+                                <small class="text-muted">Added on {{ item[1][:10] }}</small>
                             </div>
                             <span class="badge bg-primary rounded-pill">New</span>
                         </div>
@@ -138,20 +138,20 @@
     </div>
 </div>
 
-<!-- Category Distribution -->
+<!-- Brand Distribution -->
 <div class="row">
     <div class="col-12">
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-pie-chart"></i> Category Distribution</h5>
+                <h5 class="mb-0"><i class="bi bi-pie-chart"></i> Brand Distribution</h5>
             </div>
             <div class="card-body">
                 <div class="row">
-                    {% for category in category_data %}
+                    {% for brand in brand_data %}
                     <div class="col-lg-3 col-md-6 mb-3">
                         <div class="text-center p-3 border rounded">
-                            <h4 class="text-primary">{{ category[1] }}</h4>
-                            <p class="mb-0">{{ category[0] }}</p>
+                            <h4 class="text-primary">{{ brand[1] }}</h4>
+                            <p class="mb-0">{{ brand[0] }}</p>
                         </div>
                     </div>
                     {% endfor %}

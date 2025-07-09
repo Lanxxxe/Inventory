@@ -45,7 +45,8 @@
                                 <th>Image</th>
                                 <th>ID</th>
                                 <th>Product Name</th>
-                                <th>Category</th>
+                                <th>Brand Name</th>
+                                <th>Product Type</th>
                                 <th>Quantity</th>
                                 <th>Price</th>
                                 <th>Supplier</th>
@@ -57,12 +58,12 @@
                             {% for item in items %}
                             <tr>
                                 <td>
-                                    {% if item[6] %}
-                                        <img src="data:image/jpeg;base64,{{ item[6] }}" 
+                                    {% if item[7] %}
+                                        <img src="data:image/jpeg;base64,{{ item[7] }}" 
                                              alt="{{ item[1] }}" 
                                              class="product-image"
                                              style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px; cursor: pointer;"
-                                             onclick="showImageModal('{{ item[6] }}', '{{ item[1] }}')">
+                                             onclick="showImageModal('{{ item[7] }}', '{{ item[1] }}')">
                                     {% else %}
                                         <div class="no-image-placeholder" 
                                              style="width: 50px; height: 50px; background: linear-gradient(135deg, #e9ecef, #dee2e6); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
@@ -73,20 +74,23 @@
                                 <td>{{ item[0] }}</td>
                                 <td>{{ item[1] }}</td>
                                 <td>
-                                    <span class="badge bg-info">{{ item[2] }}</span>
+                                    <span class="badge bg-primary">{{ item[2] }}</span>
                                 </td>
                                 <td>
-                                    {% if item[3] < 10 %}
-                                        <span class="low-stock">{{ item[3] }}</span>
-                                    {% elif item[3] < 20 %}
-                                        <span class="text-warning">{{ item[3] }}</span>
+                                    <span class="badge bg-info">{{ item[3] }}</span>
+                                </td>
+                                <td>
+                                    {% if item[4] < 10 %}
+                                        <span class="low-stock">{{ item[4] }}</span>
+                                    {% elif item[4] < 20 %}
+                                        <span class="text-warning">{{ item[4] }}</span>
                                     {% else %}
-                                        <span class="in-stock">{{ item[3] }}</span>
+                                        <span class="in-stock">{{ item[4] }}</span>
                                     {% endif %}
                                 </td>
-                                <td>${{ "%.2f"|format(item[4]) }}</td>
-                                <td>{{ item[5] }}</td>
-                                <td>{{ item[7][:10] }}</td>
+                                <td>${{ "%.2f"|format(item[5]) }}</td>
+                                <td>{{ item[6] }}</td>
+                                <td>{{ item[8][:10] }}</td>
                                 <td>
                                     <button class="btn btn-sm btn-warning" onclick="editItem({{ item[0] }})">
                                         <i class="bi bi-pencil"></i>
@@ -131,31 +135,29 @@
                             <input type="text" class="form-control" id="productName" name="product_name" required>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="category" class="form-label">Category</label>
-                            <select class="form-control" id="category" name="category" required>
-                                <option value="">Select Category</option>
-                                <option value="Electronics">Electronics</option>
-                                <option value="Furniture">Furniture</option>
-                                <option value="Office Supplies">Office Supplies</option>
-                                <option value="Clothing">Clothing</option>
-                                <option value="Books">Books</option>
-                                <option value="Other">Other</option>
-                            </select>
+                            <label for="brandName" class="form-label">Brand Name</label>
+                            <input type="text" class="form-control" id="brandName" name="brand_name" required>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
+                            <label for="productType" class="form-label">Product Type</label>
+                            <input type="text" class="form-control" id="productType" name="product_type" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
                             <label for="quantity" class="form-label">Quantity</label>
                             <input type="number" class="form-control" id="quantity" name="quantity" min="0" required>
                         </div>
+                    </div>
+                    <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="price" class="form-label">Price ($)</label>
                             <input type="number" class="form-control" id="price" name="price" step="0.01" min="0" required>
                         </div>
-                    </div>
-                    <div class="mb-3">
-                        <label for="supplier" class="form-label">Supplier</label>
-                        <input type="text" class="form-control" id="supplier" name="supplier" required>
+                        <div class="col-md-6 mb-3">
+                            <label for="supplier" class="form-label">Supplier</label>
+                            <input type="text" class="form-control" id="supplier" name="supplier" required>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -194,31 +196,29 @@
                             <input type="text" class="form-control" id="editProductName" name="product_name" required>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="editCategory" class="form-label">Category</label>
-                            <select class="form-control" id="editCategory" name="category" required>
-                                <option value="">Select Category</option>
-                                <option value="Electronics">Electronics</option>
-                                <option value="Furniture">Furniture</option>
-                                <option value="Office Supplies">Office Supplies</option>
-                                <option value="Clothing">Clothing</option>
-                                <option value="Books">Books</option>
-                                <option value="Other">Other</option>
-                            </select>
+                            <label for="editBrandName" class="form-label">Brand Name</label>
+                            <input type="text" class="form-control" id="editBrandName" name="brand_name" required>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
+                            <label for="editProductType" class="form-label">Product Type</label>
+                            <input type="text" class="form-control" id="editProductType" name="product_type" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
                             <label for="editQuantity" class="form-label">Quantity</label>
                             <input type="number" class="form-control" id="editQuantity" name="quantity" min="0" required>
                         </div>
+                    </div>
+                    <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="editPrice" class="form-label">Price ($)</label>
                             <input type="number" class="form-control" id="editPrice" name="price" step="0.01" min="0" required>
                         </div>
-                    </div>
-                    <div class="mb-3">
-                        <label for="editSupplier" class="form-label">Supplier</label>
-                        <input type="text" class="form-control" id="editSupplier" name="supplier" required>
+                        <div class="col-md-6 mb-3">
+                            <label for="editSupplier" class="form-label">Supplier</label>
+                            <input type="text" class="form-control" id="editSupplier" name="supplier" required>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -336,7 +336,7 @@
         const formData = new FormData(form);
         
         // Basic validation
-        const requiredFields = ['product_name', 'category', 'quantity', 'price', 'supplier'];
+        const requiredFields = ['product_name', 'brand_name', 'product_type', 'quantity', 'price', 'supplier'];
         for (let field of requiredFields) {
             if (!formData.get(field) || formData.get(field).trim() === '') {
                 showError(`Please fill in the ${field.replace('_', ' ')} field.`);
@@ -373,7 +373,8 @@
             if (data.id) {
                 document.getElementById('editItemId').value = data.id;
                 document.getElementById('editProductName').value = data.product_name;
-                document.getElementById('editCategory').value = data.category;
+                document.getElementById('editBrandName').value = data.brand_name;
+                document.getElementById('editProductType').value = data.product_type;
                 document.getElementById('editQuantity').value = data.quantity;
                 document.getElementById('editPrice').value = data.price;
                 document.getElementById('editSupplier').value = data.supplier;
@@ -404,7 +405,7 @@
         const formData = new FormData(form);
         
         // Basic validation
-        const requiredFields = ['product_name', 'category', 'quantity', 'price', 'supplier'];
+        const requiredFields = ['product_name', 'brand_name', 'product_type', 'quantity', 'price', 'supplier'];
         for (let field of requiredFields) {
             if (!formData.get(field) || formData.get(field).trim() === '') {
                 showError(`Please fill in the ${field.replace('_', ' ')} field.`);

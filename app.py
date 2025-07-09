@@ -29,7 +29,8 @@ def init_db():
         CREATE TABLE IF NOT EXISTS inventory (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             product_name TEXT NOT NULL,
-            category TEXT NOT NULL,
+            brand_name TEXT NOT NULL,
+            product_type TEXT NOT NULL,
             quantity INTEGER NOT NULL,
             price REAL NOT NULL,
             supplier TEXT NOT NULL,
@@ -53,29 +54,9 @@ def init_db():
         )
     ''')
     
-    # Insert sample data if tables are empty
-    # cursor.execute('SELECT COUNT(*) FROM inventory')
-    # if cursor.fetchone()[0] == 0:
-    #     sample_data = [
-    #         ('Laptop Dell XPS 13', 'Electronics', 25, 999.99, 'Dell Inc.'),
-    #         ('Office Chair Ergonomic', 'Furniture', 50, 299.99, 'Office Supplies Co.'),
-    #         ('Wireless Mouse', 'Electronics', 100, 29.99, 'Tech Accessories Ltd.'),
-    #         ('Standing Desk', 'Furniture', 15, 599.99, 'Furniture World'),
-    #         ('USB-C Hub', 'Electronics', 75, 49.99, 'Tech Accessories Ltd.'),
-    #         ('Monitor 27 inch', 'Electronics', 30, 349.99, 'Display Solutions'),
-    #         ('Desk Lamp LED', 'Office Supplies', 40, 79.99, 'Lighting Co.'),
-    #         ('Keyboard Mechanical', 'Electronics', 60, 129.99, 'Gaming Gear Inc.')
-    #     ]
-        
-    #     cursor.executemany('''
-    #         INSERT INTO inventory (product_name, category, quantity, price, supplier, image_data)
-    #         VALUES (?, ?, ?, ?, ?, ?)
-    #     ''', [(item[0], item[1], item[2], item[3], item[4], None) for item in sample_data])
-    
     conn.commit()
     conn.close()
 
-# Initialize database on startup
 init_db()
 
 @app.route('/')
@@ -105,8 +86,8 @@ def dashboard():
     recent_items = cursor.fetchall()
     
     # Get category distribution
-    cursor.execute('SELECT category, COUNT(*) FROM inventory GROUP BY category')
-    category_data = cursor.fetchall()
+    cursor.execute('SELECT brand_name, COUNT(*) FROM inventory GROUP BY brand_name')
+    brand_data = cursor.fetchall()
     
     conn.close()
     
@@ -117,7 +98,7 @@ def dashboard():
                          pending_returns=pending_returns,
                          low_stock_items=low_stock_items,
                          recent_items=recent_items,
-                         category_data=category_data)
+                         brand_data=brand_data)
 
 @app.route('/inventory')
 def inventory():
@@ -148,7 +129,8 @@ def add_inventory():
     try:
         # Handle form data instead of JSON for file uploads
         product_name = request.form.get('product_name')
-        category = request.form.get('category')
+        brand_name = request.form.get('brand_name')
+        product_type = request.form.get('product_type')
         quantity = int(request.form.get('quantity'))
         price = float(request.form.get('price'))
         supplier = request.form.get('supplier')
@@ -174,10 +156,10 @@ def add_inventory():
         cursor = conn.cursor()
         
         cursor.execute('''
-            INSERT INTO inventory (product_name, category, quantity, price, supplier, image_data)
-            VALUES (?, ?, ?, ?, ?, ?)
-        ''', (product_name, category, quantity, price, supplier, image_data))
-        
+            INSERT INTO inventory (product_name, brand_name, product_type, quantity, price, supplier, image_data)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (product_name, brand_name, product_type, quantity, price, supplier, image_data))
+
         conn.commit()
         conn.close()
         return jsonify({'success': True, 'message': 'Product added successfully!'})
@@ -188,7 +170,8 @@ def add_inventory():
 def update_inventory(item_id):
     try:
         product_name = request.form.get('product_name')
-        category = request.form.get('category')
+        brand_name = request.form.get('brand_name')
+        product_type = request.form.get('product_type')
         quantity = int(request.form.get('quantity'))
         price = float(request.form.get('price'))
         supplier = request.form.get('supplier')
@@ -218,15 +201,15 @@ def update_inventory(item_id):
         if update_image:
             cursor.execute('''
                 UPDATE inventory 
-                SET product_name=?, category=?, quantity=?, price=?, supplier=?, image_data=?, last_updated=CURRENT_TIMESTAMP
+                SET product_name=?, brand_name=?, product_type=?, quantity=?, price=?, supplier=?, image_data=?, last_updated=CURRENT_TIMESTAMP
                 WHERE id=?
-            ''', (product_name, category, quantity, price, supplier, image_data, item_id))
+            ''', (product_name, brand_name, product_type, quantity, price, supplier, image_data, item_id))
         else:
             cursor.execute('''
                 UPDATE inventory 
-                SET product_name=?, category=?, quantity=?, price=?, supplier=?, last_updated=CURRENT_TIMESTAMP
+                SET product_name=?, brand_name=?, product_type=?, quantity=?, price=?, supplier=?, last_updated=CURRENT_TIMESTAMP
                 WHERE id=?
-            ''', (product_name, category, quantity, price, supplier, item_id))
+            ''', (product_name, brand_name, product_type, quantity, price, supplier, item_id))
         
         conn.commit()
         conn.close()
@@ -291,13 +274,14 @@ def get_inventory_item(item_id):
         return jsonify({
             'id': item[0],
             'product_name': item[1],
-            'category': item[2],
-            'quantity': item[3],
-            'price': item[4],
-            'supplier': item[5],
-            'image_data': item[6]
+            'brand_name': item[2],
+            'product_type': item[3],
+            'quantity': item[4],
+            'price': item[5],
+            'supplier': item[6],
+            'image_data': item[7]
         })
     return jsonify({'error': 'Item not found'}), 404
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()
