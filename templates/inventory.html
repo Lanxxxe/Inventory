@@ -1,0 +1,460 @@
+{% extends "base.html" %}
+
+{% block title %}Inventory - Stock Inventory System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="page-title">
+            <i class="bi bi-box-seam"></i> Inventory Management
+        </h1>
+    </div>
+</div>
+
+<!-- Action Buttons -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addItemModal">
+                    <i class="bi bi-plus-circle"></i> Add New Product
+                </button>
+                <button class="btn btn-success ms-2" onclick="refreshInventory()">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                </button>
+                <div class="float-end">
+                    <input type="text" class="form-control" id="searchInput" placeholder="Search products..." style="width: 300px;">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Inventory Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-table"></i> Product Inventory</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="inventoryTable">
+                        <thead>
+                            <tr>
+                                <th>Image</th>
+                                <th>ID</th>
+                                <th>Product Name</th>
+                                <th>Category</th>
+                                <th>Quantity</th>
+                                <th>Price</th>
+                                <th>Supplier</th>
+                                <th>Date Added</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in items %}
+                            <tr>
+                                <td>
+                                    {% if item[6] %}
+                                        <img src="data:image/jpeg;base64,{{ item[6] }}" 
+                                             alt="{{ item[1] }}" 
+                                             class="product-image"
+                                             style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px; cursor: pointer;"
+                                             onclick="showImageModal('{{ item[6] }}', '{{ item[1] }}')">
+                                    {% else %}
+                                        <div class="no-image-placeholder" 
+                                             style="width: 50px; height: 50px; background: linear-gradient(135deg, #e9ecef, #dee2e6); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                            <i class="bi bi-image text-muted"></i>
+                                        </div>
+                                    {% endif %}
+                                </td>
+                                <td>{{ item[0] }}</td>
+                                <td>{{ item[1] }}</td>
+                                <td>
+                                    <span class="badge bg-info">{{ item[2] }}</span>
+                                </td>
+                                <td>
+                                    {% if item[3] < 10 %}
+                                        <span class="low-stock">{{ item[3] }}</span>
+                                    {% elif item[3] < 20 %}
+                                        <span class="text-warning">{{ item[3] }}</span>
+                                    {% else %}
+                                        <span class="in-stock">{{ item[3] }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>${{ "%.2f"|format(item[4]) }}</td>
+                                <td>{{ item[5] }}</td>
+                                <td>{{ item[7][:10] }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-warning" onclick="editItem({{ item[0] }})">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-danger ms-1" onclick="deleteItem({{ item[0] }})">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Item Modal -->
+<div class="modal fade" id="addItemModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Add New Product</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addItemForm" enctype="multipart/form-data">
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <label for="productImage" class="form-label">Product Image</label>
+                            <input type="file" class="form-control" id="productImage" name="product_image" accept="image/*">
+                            <div class="form-text">Supported formats: PNG, JPG, JPEG, GIF, WebP. Max size: 5MB</div>
+                            <div id="imagePreview" class="mt-2" style="display: none;">
+                                <img id="previewImg" src="/placeholder.svg" alt="Preview" style="max-width: 200px; max-height: 200px; border-radius: 8px; border: 2px solid #dee2e6;">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="productName" class="form-label">Product Name</label>
+                            <input type="text" class="form-control" id="productName" name="product_name" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="category" class="form-label">Category</label>
+                            <select class="form-control" id="category" name="category" required>
+                                <option value="">Select Category</option>
+                                <option value="Electronics">Electronics</option>
+                                <option value="Furniture">Furniture</option>
+                                <option value="Office Supplies">Office Supplies</option>
+                                <option value="Clothing">Clothing</option>
+                                <option value="Books">Books</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="quantity" class="form-label">Quantity</label>
+                            <input type="number" class="form-control" id="quantity" name="quantity" min="0" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="price" class="form-label">Price ($)</label>
+                            <input type="number" class="form-control" id="price" name="price" step="0.01" min="0" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="supplier" class="form-label">Supplier</label>
+                        <input type="text" class="form-control" id="supplier" name="supplier" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="addItem()">Add Product</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Item Modal -->
+<div class="modal fade" id="editItemModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-pencil"></i> Edit Product</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editItemForm" enctype="multipart/form-data">
+                    <input type="hidden" id="editItemId">
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <label for="editProductImage" class="form-label">Product Image</label>
+                            <input type="file" class="form-control" id="editProductImage" name="product_image" accept="image/*">
+                            <div class="form-text">Leave empty to keep current image. Supported formats: PNG, JPG, JPEG, GIF, WebP. Max size: 5MB</div>
+                            <div id="editImagePreview" class="mt-2">
+                                <img id="editPreviewImg" src="/placeholder.svg" alt="Current Image" style="max-width: 200px; max-height: 200px; border-radius: 8px; border: 2px solid #dee2e6;">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="editProductName" class="form-label">Product Name</label>
+                            <input type="text" class="form-control" id="editProductName" name="product_name" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="editCategory" class="form-label">Category</label>
+                            <select class="form-control" id="editCategory" name="category" required>
+                                <option value="">Select Category</option>
+                                <option value="Electronics">Electronics</option>
+                                <option value="Furniture">Furniture</option>
+                                <option value="Office Supplies">Office Supplies</option>
+                                <option value="Clothing">Clothing</option>
+                                <option value="Books">Books</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="editQuantity" class="form-label">Quantity</label>
+                            <input type="number" class="form-control" id="editQuantity" name="quantity" min="0" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="editPrice" class="form-label">Price ($)</label>
+                            <input type="number" class="form-control" id="editPrice" name="price" step="0.01" min="0" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editSupplier" class="form-label">Supplier</label>
+                        <input type="text" class="form-control" id="editSupplier" name="supplier" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="updateItem()">Update Product</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Image View Modal -->
+<div class="modal fade" id="imageViewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="imageModalTitle">Product Image</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="fullSizeImage" src="/placeholder.svg" alt="Product Image" style="max-width: 100%; height: auto; border-radius: 8px;">
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Search functionality
+    document.getElementById('searchInput').addEventListener('keyup', function() {
+        const searchTerm = this.value.toLowerCase();
+        const tableRows = document.querySelectorAll('#inventoryTable tbody tr');
+        
+        tableRows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(searchTerm) ? '' : 'none';
+        });
+    });
+
+    // Image preview functionality
+    document.getElementById('productImage').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        const preview = document.getElementById('imagePreview');
+        const previewImg = document.getElementById('previewImg');
+        
+        if (file) {
+            // Validate file size
+            if (file.size > 5 * 1024 * 1024) {
+                showError('File size too large. Maximum 5MB allowed.');
+                this.value = '';
+                preview.style.display = 'none';
+                return;
+            }
+            
+            // Validate file type
+            const allowedTypes = ['image/png', 'image/jpg', 'image/jpeg', 'image/gif', 'image/webp'];
+            if (!allowedTypes.includes(file.type)) {
+                showError('Invalid file type. Please select PNG, JPG, JPEG, GIF, or WebP.');
+                this.value = '';
+                preview.style.display = 'none';
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        } else {
+            preview.style.display = 'none';
+        }
+    });
+
+    // Edit image preview functionality
+    document.getElementById('editProductImage').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        const previewImg = document.getElementById('editPreviewImg');
+        
+        if (file) {
+            // Validate file size
+            if (file.size > 5 * 1024 * 1024) {
+                showError('File size too large. Maximum 5MB allowed.');
+                this.value = '';
+                return;
+            }
+            
+            // Validate file type
+            const allowedTypes = ['image/png', 'image/jpg', 'image/jpeg', 'image/gif', 'image/webp'];
+            if (!allowedTypes.includes(file.type)) {
+                showError('Invalid file type. Please select PNG, JPG, JPEG, GIF, or WebP.');
+                this.value = '';
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // Show full-size image modal
+    function showImageModal(imageData, productName) {
+        document.getElementById('imageModalTitle').textContent = productName;
+        document.getElementById('fullSizeImage').src = 'data:image/jpeg;base64,' + imageData;
+        new bootstrap.Modal(document.getElementById('imageViewModal')).show();
+    }
+
+    // Add new item with image upload
+    function addItem() {
+        const form = document.getElementById('addItemForm');
+        const formData = new FormData(form);
+        
+        // Basic validation
+        const requiredFields = ['product_name', 'category', 'quantity', 'price', 'supplier'];
+        for (let field of requiredFields) {
+            if (!formData.get(field) || formData.get(field).trim() === '') {
+                showError(`Please fill in the ${field.replace('_', ' ')} field.`);
+                return;
+            }
+        }
+
+        fetch('/api/inventory', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showSuccess(data.message);
+                form.reset();
+                document.getElementById('imagePreview').style.display = 'none';
+                bootstrap.Modal.getInstance(document.getElementById('addItemModal')).hide();
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showError(data.message);
+            }
+        })
+        .catch(error => {
+            showError('An error occurred while adding the product.');
+        });
+    }
+
+    // Edit item
+    function editItem(itemId) {
+        fetch(`/api/inventory/${itemId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.id) {
+                document.getElementById('editItemId').value = data.id;
+                document.getElementById('editProductName').value = data.product_name;
+                document.getElementById('editCategory').value = data.category;
+                document.getElementById('editQuantity').value = data.quantity;
+                document.getElementById('editPrice').value = data.price;
+                document.getElementById('editSupplier').value = data.supplier;
+            
+                // Show current image if exists
+                const editPreviewImg = document.getElementById('editPreviewImg');
+                if (data.image_data) {
+                    editPreviewImg.src = 'data:image/jpeg;base64,' + data.image_data;
+                    editPreviewImg.style.display = 'block';
+                } else {
+                    editPreviewImg.style.display = 'none';
+                }
+            
+                new bootstrap.Modal(document.getElementById('editItemModal')).show();
+            } else {
+                showError('Product not found.');
+            }
+        })
+        .catch(error => {
+            showError('An error occurred while fetching product details.');
+        });
+    }
+
+    // Update item with image upload
+    function updateItem() {
+        const itemId = document.getElementById('editItemId').value;
+        const form = document.getElementById('editItemForm');
+        const formData = new FormData(form);
+        
+        // Basic validation
+        const requiredFields = ['product_name', 'category', 'quantity', 'price', 'supplier'];
+        for (let field of requiredFields) {
+            if (!formData.get(field) || formData.get(field).trim() === '') {
+                showError(`Please fill in the ${field.replace('_', ' ')} field.`);
+                return;
+            }
+        }
+
+        fetch(`/api/inventory/${itemId}`, {
+            method: 'PUT',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showSuccess(data.message);
+                bootstrap.Modal.getInstance(document.getElementById('editItemModal')).hide();
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showError(data.message);
+            }
+        })
+        .catch(error => {
+            showError('An error occurred while updating the product.');
+        });
+    }
+
+    // Delete item (unchanged)
+    function deleteItem(itemId) {
+        confirmDelete(() => {
+            fetch(`/api/inventory/${itemId}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showSuccess(data.message);
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showError(data.message);
+                }
+            })
+            .catch(error => {
+                showError('An error occurred while deleting the product.');
+            });
+        });
+    }
+
+    // Refresh inventory
+    function refreshInventory() {
+        location.reload();
+    }
+</script>
+{% endblock %}

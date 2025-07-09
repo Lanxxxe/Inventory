@@ -1,0 +1,309 @@
+{% extends "base.html" %}
+
+{% block title %}Returns - Stock Inventory System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="page-title">
+            <i class="bi bi-arrow-return-left"></i> Returns Management
+        </h1>
+    </div>
+</div>
+
+<!-- Action Buttons -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addReturnModal">
+                    <i class="bi bi-plus-circle"></i> Add Return Request
+                </button>
+                <button class="btn btn-success ms-2" onclick="refreshReturns()">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                </button>
+                <div class="float-end">
+                    <select class="form-select" id="statusFilter" style="width: 200px;" onchange="filterByStatus()">
+                        <option value="">All Status</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Approved">Approved</option>
+                        <option value="Rejected">Rejected</option>
+                        <option value="Completed">Completed</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Returns Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-table"></i> Return Requests</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="returnsTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Product Name</th>
+                                <th>Quantity</th>
+                                <th>Reason</th>
+                                <th>Return Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for return_item in returns %}
+                            <tr>
+                                <td>{{ return_item[0] }}</td>
+                                <td>{{ return_item[2] }}</td>
+                                <td>{{ return_item[3] }}</td>
+                                <td>{{ return_item[4] }}</td>
+                                <td>{{ return_item[5][:10] }}</td>
+                                <td>
+                                    {% if return_item[6] == 'Pending' %}
+                                        <span class="badge bg-warning">{{ return_item[6] }}</span>
+                                    {% elif return_item[6] == 'Approved' %}
+                                        <span class="badge bg-success">{{ return_item[6] }}</span>
+                                    {% elif return_item[6] == 'Rejected' %}
+                                        <span class="badge bg-danger">{{ return_item[6] }}</span>
+                                    {% else %}
+                                        <span class="badge bg-info">{{ return_item[6] }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if return_item[6] == 'Pending' %}
+                                    <div class="btn-group" role="group">
+                                        <button class="btn btn-sm btn-success" onclick="updateReturnStatus({{ return_item[0] }}, 'Approved')">
+                                            <i class="bi bi-check"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-danger" onclick="updateReturnStatus({{ return_item[0] }}, 'Rejected')">
+                                            <i class="bi bi-x"></i>
+                                        </button>
+                                    </div>
+                                    {% elif return_item[6] == 'Approved' %}
+                                    <button class="btn btn-sm btn-info" onclick="updateReturnStatus({{ return_item[0] }}, 'Completed')">
+                                        <i class="bi bi-check-circle"></i> Complete
+                                    </button>
+                                    {% else %}
+                                    <span class="text-muted">No actions</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mt-4">
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3 class="text-warning">{{ returns|selectattr('6', 'equalto', 'Pending')|list|length }}</h3>
+                <p class="mb-0">Pending Returns</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3 class="text-success">{{ returns|selectattr('6', 'equalto', 'Approved')|list|length }}</h3>
+                <p class="mb-0">Approved Returns</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3 class="text-danger">{{ returns|selectattr('6', 'equalto', 'Rejected')|list|length }}</h3>
+                <p class="mb-0">Rejected Returns</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3 class="text-info">{{ returns|selectattr('6', 'equalto', 'Completed')|list|length }}</h3>
+                <p class="mb-0">Completed Returns</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Return Modal -->
+<div class="modal fade" id="addReturnModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Add Return Request</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addReturnForm">
+                    <div class="mb-3">
+                        <label for="productSelect" class="form-label">Select Product</label>
+                        <select class="form-control" id="productSelect" required>
+                            <option value="">Choose a product...</option>
+                            {% for item in inventory_items %}
+                            <option value="{{ item[0] }}" data-name="{{ item[1] }}">{{ item[1] }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="returnQuantity" class="form-label">Quantity to Return</label>
+                        <input type="number" class="form-control" id="returnQuantity" min="1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="returnReason" class="form-label">Reason for Return</label>
+                        <select class="form-control" id="returnReason" required>
+                            <option value="">Select reason...</option>
+                            <option value="Defective Product">Defective Product</option>
+                            <option value="Wrong Item Received">Wrong Item Received</option>
+                            <option value="Damaged During Shipping">Damaged During Shipping</option>
+                            <option value="Not as Described">Not as Described</option>
+                            <option value="Customer Changed Mind">Customer Changed Mind</option>
+                            <option value="Expired Product">Expired Product</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="mb-3" id="otherReasonDiv" style="display: none;">
+                        <label for="otherReason" class="form-label">Please specify</label>
+                        <textarea class="form-control" id="otherReason" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="addReturn()">Submit Return Request</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Show/hide other reason field
+    document.getElementById('returnReason').addEventListener('change', function() {
+        const otherDiv = document.getElementById('otherReasonDiv');
+        if (this.value === 'Other') {
+            otherDiv.style.display = 'block';
+            document.getElementById('otherReason').required = true;
+        } else {
+            otherDiv.style.display = 'none';
+            document.getElementById('otherReason').required = false;
+        }
+    });
+
+    // Filter by status
+    function filterByStatus() {
+        const statusFilter = document.getElementById('statusFilter').value;
+        const tableRows = document.querySelectorAll('#returnsTable tbody tr');
+        
+        tableRows.forEach(row => {
+            const statusCell = row.cells[5].textContent.trim();
+            if (statusFilter === '' || statusCell.includes(statusFilter)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    // Add return request
+    function addReturn() {
+        const productSelect = document.getElementById('productSelect');
+        const selectedOption = productSelect.options[productSelect.selectedIndex];
+        const reason = document.getElementById('returnReason').value;
+        
+        const formData = {
+            product_id: parseInt(productSelect.value),
+            product_name: selectedOption.dataset.name,
+            quantity_returned: parseInt(document.getElementById('returnQuantity').value),
+            reason: reason === 'Other' ? document.getElementById('otherReason').value : reason
+        };
+
+        // Basic validation
+        if (!formData.product_id || !formData.quantity_returned || !formData.reason) {
+            showError('Please fill in all required fields.');
+            return;
+        }
+
+        fetch('/api/returns', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showSuccess(data.message);
+                document.getElementById('addReturnForm').reset();
+                document.getElementById('otherReasonDiv').style.display = 'none';
+                bootstrap.Modal.getInstance(document.getElementById('addReturnModal')).hide();
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showError(data.message);
+            }
+        })
+        .catch(error => {
+            showError('An error occurred while submitting the return request.');
+        });
+    }
+
+    // Update return status
+    function updateReturnStatus(returnId, status) {
+        const statusText = status.toLowerCase();
+        const confirmMessage = `Are you sure you want to ${statusText} this return request?`;
+        
+        Swal.fire({
+            title: 'Confirm Action',
+            text: confirmMessage,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: status === 'Approved' ? '#27ae60' : status === 'Rejected' ? '#e74c3c' : '#3498db',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: `Yes, ${statusText} it!`
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch(`/api/returns/${returnId}/status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ status: status })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showSuccess(data.message);
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        showError(data.message);
+                    }
+                })
+                .catch(error => {
+                    showError('An error occurred while updating the return status.');
+                });
+            }
+        });
+    }
+
+    // Refresh returns
+    function refreshReturns() {
+        location.reload();
+    }
+</script>
+{% endblock %}

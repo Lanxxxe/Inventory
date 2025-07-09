@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Stock Inventory System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="page-title">
+            <i class="bi bi-speedometer2"></i> Dashboard Overview
+        </h1>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="mb-0">{{ total_products }}</h3>
+                    <p class="mb-0">Total Products</p>
+                </div>
+                <i class="bi bi-box-seam fs-1"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card success">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="mb-0">{{ total_stock }}</h3>
+                    <p class="mb-0">Total Stock</p>
+                </div>
+                <i class="bi bi-boxes fs-1"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card info">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="mb-0">&#8369; {{ "%.2f"|format(total_value) }}</h3>
+                    <p class="mb-0">Total Value</p>
+                </div>
+                <i class="bi bi-cash fs-1"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card warning">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="mb-0">{{ pending_returns }}</h3>
+                    <p class="mb-0">Pending Returns</p>
+                </div>
+                <i class="bi bi-arrow-return-left fs-1"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts and Tables Row -->
+<div class="row">
+    <!-- Low Stock Alert -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Low Stock Alert</h5>
+            </div>
+            <div class="card-body">
+                {% if low_stock_items %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Quantity</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in low_stock_items %}
+                                <tr>
+                                    <td>{{ item[0] }}</td>
+                                    <td>{{ item[1] }}</td>
+                                    <td>
+                                        {% if item[1] < 10 %}
+                                            <span class="badge bg-danger">Critical</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">Low</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted">
+                        <i class="bi bi-check-circle fs-1"></i>
+                        <p>All products are well stocked!</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Activity -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-clock-history"></i> Recent Activity</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_items %}
+                    <div class="list-group list-group-flush">
+                        {% for item in recent_items %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center border-0">
+                            <div>
+                                <h6 class="mb-1">{{ item[0] }}</h6>
+                                <small class="text-muted">Added </small>
+                            </div>
+                            <span class="badge bg-primary rounded-pill">New</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted">
+                        <i class="bi bi-inbox fs-1"></i>
+                        <p>No recent activity</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Category Distribution -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-pie-chart"></i> Category Distribution</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for category in category_data %}
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <div class="text-center p-3 border rounded">
+                            <h4 class="text-primary">{{ category[1] }}</h4>
+                            <p class="mb-0">{{ category[0] }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-lightning"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body text-center">
+                <a href="{{ url_for('inventory') }}" class="btn btn-primary me-3 mb-2">
+                    <i class="bi bi-plus-circle"></i> Add New Product
+                </a>
+                <a href="{{ url_for('inventory') }}" class="btn btn-success me-3 mb-2">
+                    <i class="bi bi-eye"></i> View Inventory
+                </a>
+                <a href="{{ url_for('returns') }}" class="btn btn-warning mb-2">
+                    <i class="bi bi-arrow-return-left"></i> Process Returns
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Auto-refresh dashboard every 5 minutes
+    setTimeout(function() {
+        location.reload();
+    }, 300000);
+    
+    // Add some interactive elements
+    document.addEventListener('DOMContentLoaded', function() {
+        // Animate stats cards on load
+        const statsCards = document.querySelectorAll('.stats-card');
+        statsCards.forEach((card, index) => {
+            setTimeout(() => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                card.style.transition = 'all 0.5s ease';
+                
+                setTimeout(() => {
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, 100);
+            }, index * 100);
+        });
+    });
+</script>
+{% endblock %}
