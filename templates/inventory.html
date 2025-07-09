@@ -88,7 +88,7 @@
                                         <span class="in-stock">{{ item[4] }}</span>
                                     {% endif %}
                                 </td>
-                                <td>${{ "%.2f"|format(item[5]) }}</td>
+                                <td>&#8369;{{ "%.2f"|format(item[5]) }}</td>
                                 <td>{{ item[6] }}</td>
                                 <td>{{ item[8][:10] }}</td>
                                 <td>
@@ -151,7 +151,7 @@
                     </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="price" class="form-label">Price ($)</label>
+                            <label for="price" class="form-label">Price (&#8369;)</label>
                             <input type="number" class="form-control" id="price" name="price" step="0.01" min="0" required>
                         </div>
                         <div class="col-md-6 mb-3">
@@ -212,7 +212,7 @@
                     </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="editPrice" class="form-label">Price ($)</label>
+                            <label for="editPrice" class="form-label">Price (&#8369;)</label>
                             <input type="number" class="form-control" id="editPrice" name="price" step="0.01" min="0" required>
                         </div>
                         <div class="col-md-6 mb-3">
