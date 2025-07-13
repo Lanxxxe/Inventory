@@ -48,7 +48,7 @@
                                 <th>Brand Name</th>
                                 <th>Product Type</th>
                                 <th>Quantity</th>
-                                <th>Price</th>
+                                <th>Location</th>
                                 <th>Supplier</th>
                                 <th>Date Added</th>
                                 <th>Actions</th>
@@ -88,7 +88,7 @@
                                         <span class="in-stock">{{ item[4] }}</span>
                                     {% endif %}
                                 </td>
-                                <td>&#8369;{{ "%.2f"|format(item[5]) }}</td>
+                                <td>&#8369;{{ item[5] }}</td>
                                 <td>{{ item[6] }}</td>
                                 <td>{{ item[8][:10] }}</td>
                                 <td>
@@ -150,9 +150,9 @@
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="price" class="form-label">Price (&#8369;)</label>
-                            <input type="number" class="form-control" id="price" name="price" step="0.01" min="0" required>
+                        <div class="col-md-12 mb-3">
+                            <label for="location" class="form-label">Location</label>
+                            <input type="text" class="form-control" id="location" name="location" placeholder="e.g., Warehouse A-1" required>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="supplier" class="form-label">Supplier</label>
@@ -211,9 +211,9 @@
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="editPrice" class="form-label">Price (&#8369;)</label>
-                            <input type="number" class="form-control" id="editPrice" name="price" step="0.01" min="0" required>
+                        <div class="col-md-12 mb-3">
+                            <label for="editLocation" class="form-label">Location</label>
+                            <input type="text" class="form-control" id="editLocation" name="location" required>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="editSupplier" class="form-label">Supplier</label>
@@ -336,7 +336,7 @@
         const formData = new FormData(form);
         
         // Basic validation
-        const requiredFields = ['product_name', 'brand_name', 'product_type', 'quantity', 'price', 'supplier'];
+        const requiredFields = ['product_name', 'brand_name', 'product_type', 'quantity', 'location', 'supplier'];
         for (let field of requiredFields) {
             if (!formData.get(field) || formData.get(field).trim() === '') {
                 showError(`Please fill in the ${field.replace('_', ' ')} field.`);
@@ -376,7 +376,7 @@
                 document.getElementById('editBrandName').value = data.brand_name;
                 document.getElementById('editProductType').value = data.product_type;
                 document.getElementById('editQuantity').value = data.quantity;
-                document.getElementById('editPrice').value = data.price;
+                document.getElementById('editLocation').value = data.location;
                 document.getElementById('editSupplier').value = data.supplier;
             
                 // Show current image if exists
@@ -405,7 +405,7 @@
         const formData = new FormData(form);
         
         // Basic validation
-        const requiredFields = ['product_name', 'brand_name', 'product_type', 'quantity', 'price', 'supplier'];
+        const requiredFields = ['product_name', 'brand_name', 'product_type', 'quantity', 'location', 'supplier'];
         for (let field of requiredFields) {
             if (!formData.get(field) || formData.get(field).trim() === '') {
                 showError(`Please fill in the ${field.replace('_', ' ')} field.`);

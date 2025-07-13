@@ -1,0 +1,469 @@
+{% extends "base.html" %}
+
+{% block title %}Material Logbook - Stock Inventory System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="page-title">
+            <i class="bi bi-journal-text"></i> Material Logbook
+        </h1>
+    </div>
+</div>
+
+<!-- Action Buttons -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addLogbookModal">
+                    <i class="bi bi-plus-circle"></i> Add New Entry
+                </button>
+                <button class="btn btn-success ms-2" onclick="refreshLogbook()">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                </button>
+                <div class="float-end">
+                    <div class="d-flex gap-2">
+                        <select class="form-select" id="typeFilter" style="width: 120px;" onchange="filterByType()">
+                            <option value="">All Types</option>
+                            <option value="IN">IN</option>
+                            <option value="OUT">OUT</option>
+                        </select>
+                        <input type="text" class="form-control" id="searchInput" placeholder="Search materials..." style="width: 250px;">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card success">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="mb-0">{{ logbook_entries|selectattr('6', 'equalto', 'IN')|list|length }}</h3>
+                    <p class="mb-0">Materials IN</p>
+                </div>
+                <i class="bi bi-arrow-down-circle fs-1"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card warning">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="mb-0">{{ logbook_entries|selectattr('6', 'equalto', 'OUT')|list|length }}</h3>
+                    <p class="mb-0">Materials OUT</p>
+                </div>
+                <i class="bi bi-arrow-up-circle fs-1"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card info">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="mb-0">{{ logbook_entries|length }}</h3>
+                    <p class="mb-0">Total Entries</p>
+                </div>
+                <i class="bi bi-journal-text fs-1"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="mb-0">{{ (logbook_entries|selectattr('1', 'ge', (moment().subtract(7, 'days').format('YYYY-MM-DD')))|list|length) if logbook_entries else 0 }}</h3>
+                    <p class="mb-0">This Week</p>
+                </div>
+                <i class="bi bi-calendar-week fs-1"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Logbook Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-table"></i> Material Logbook Entries</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="logbookTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Material Name</th>
+                                <th>Description</th>
+                                <th>Qty</th>
+                                <th>Unit</th>
+                                <th>Type</th>
+                                <th>Remarks</th>
+                                <th>Issued By</th>
+                                <th>Received By</th>
+                                <th>Checked By</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for entry in logbook_entries %}
+                            <tr>
+                                <td>{{ entry[1] }}</td>
+                                <td><strong>{{ entry[2] }}</strong></td>
+                                <td>{{ entry[3] or '-' }}</td>
+                                <td>{{ entry[4] }}</td>
+                                <td>{{ entry[5] }}</td>
+                                <td>
+                                    {% if entry[6] == 'IN' %}
+                                        <span class="badge bg-success">{{ entry[6] }}</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">{{ entry[6] }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ entry[7] or '-' }}</td>
+                                <td>{{ entry[8] or '-' }}</td>
+                                <td>{{ entry[9] or '-' }}</td>
+                                <td>{{ entry[10] }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-warning" onclick="editLogbookEntry({{ entry[0] }})">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-danger ms-1" onclick="deleteLogbookEntry({{ entry[0] }})">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Logbook Entry Modal -->
+<div class="modal fade" id="addLogbookModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Add Logbook Entry</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addLogbookForm">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="entryDate" class="form-label">Date</label>
+                            <input type="date" class="form-control" id="entryDate" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="materialName" class="form-label">Material Name</label>
+                            <input type="text" class="form-control" id="materialName" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <input type="text" class="form-control" id="description">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label for="quantity" class="form-label">Quantity</label>
+                            <input type="number" class="form-control" id="quantity" step="0.01" required>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="unit" class="form-label">Unit</label>
+                            <input type="text" class="form-control" id="unit" placeholder="e.g., pcs, kg, m" required>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="entryType" class="form-label">Type</label>
+                            <select class="form-control" id="entryType" required>
+                                <option value="">Select Type</option>
+                                <option value="IN">IN</option>
+                                <option value="OUT">OUT</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="remarks" class="form-label">Remarks</label>
+                            <input type="text" class="form-control" id="remarks">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="issuedBy" class="form-label">Issued By</label>
+                            <input type="text" class="form-control" id="issuedBy">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="receivedBy" class="form-label">Received By</label>
+                            <input type="text" class="form-control" id="receivedBy">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="checkedBy" class="form-label">Checked By</label>
+                            <input type="text" class="form-control" id="checkedBy" required>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="addLogbookEntry()">Add Entry</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Logbook Entry Modal -->
+<div class="modal fade" id="editLogbookModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-pencil"></i> Edit Logbook Entry</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editLogbookForm">
+                    <input type="hidden" id="editEntryId">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="editEntryDate" class="form-label">Date</label>
+                            <input type="date" class="form-control" id="editEntryDate" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="editMaterialName" class="form-label">Material Name</label>
+                            <input type="text" class="form-control" id="editMaterialName" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="editDescription" class="form-label">Description</label>
+                            <input type="text" class="form-control" id="editDescription">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label for="editQuantity" class="form-label">Quantity</label>
+                            <input type="number" class="form-control" id="editQuantity" step="0.01" required>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="editUnit" class="form-label">Unit</label>
+                            <input type="text" class="form-control" id="editUnit" required>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="editEntryType" class="form-label">Type</label>
+                            <select class="form-control" id="editEntryType" required>
+                                <option value="">Select Type</option>
+                                <option value="IN">IN</option>
+                                <option value="OUT">OUT</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="editRemarks" class="form-label">Remarks</label>
+                            <input type="text" class="form-control" id="editRemarks">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="editIssuedBy" class="form-label">Issued By</label>
+                            <input type="text" class="form-control" id="editIssuedBy">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="editReceivedBy" class="form-label">Received By</label>
+                            <input type="text" class="form-control" id="editReceivedBy">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="editCheckedBy" class="form-label">Checked By</label>
+                            <input type="text" class="form-control" id="editCheckedBy" required>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="updateLogbookEntry()">Update Entry</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Set today's date as default
+    document.getElementById('entryDate').value = new Date().toISOString().split('T')[0];
+
+    // Search functionality
+    document.getElementById('searchInput').addEventListener('keyup', function() {
+        const searchTerm = this.value.toLowerCase();
+        const tableRows = document.querySelectorAll('#logbookTable tbody tr');
+        
+        tableRows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(searchTerm) ? '' : 'none';
+        });
+    });
+
+    // Filter by type
+    function filterByType() {
+        const typeFilter = document.getElementById('typeFilter').value;
+        const tableRows = document.querySelectorAll('#logbookTable tbody tr');
+        
+        tableRows.forEach(row => {
+            const typeCell = row.cells[5].textContent.trim();
+            if (typeFilter === '' || typeCell.includes(typeFilter)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    // Add logbook entry
+    function addLogbookEntry() {
+        const formData = {
+            date: document.getElementById('entryDate').value,
+            material_name: document.getElementById('materialName').value,
+            description: document.getElementById('description').value,
+            quantity: parseFloat(document.getElementById('quantity').value),
+            unit: document.getElementById('unit').value,
+            type: document.getElementById('entryType').value,
+            remarks: document.getElementById('remarks').value,
+            issued_by: document.getElementById('issuedBy').value,
+            received_by: document.getElementById('receivedBy').value,
+            checked_by: document.getElementById('checkedBy').value
+        };
+
+        // Basic validation
+        if (!formData.date || !formData.material_name || !formData.quantity || !formData.unit || !formData.type || !formData.checked_by) {
+            showError('Please fill in all required fields.');
+            return;
+        }
+
+        fetch('/api/material-logbook', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showSuccess(data.message);
+                document.getElementById('addLogbookForm').reset();
+                document.getElementById('entryDate').value = new Date().toISOString().split('T')[0];
+                bootstrap.Modal.getInstance(document.getElementById('addLogbookModal')).hide();
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showError(data.message);
+            }
+        })
+        .catch(error => {
+            showError('An error occurred while adding the logbook entry.');
+        });
+    }
+
+    // Edit logbook entry
+    function editLogbookEntry(entryId) {
+        fetch(`/api/material-logbook/${entryId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.id) {
+                document.getElementById('editEntryId').value = data.id;
+                document.getElementById('editEntryDate').value = data.date;
+                document.getElementById('editMaterialName').value = data.material_name;
+                document.getElementById('editDescription').value = data.description || '';
+                document.getElementById('editQuantity').value = data.quantity;
+                document.getElementById('editUnit').value = data.unit;
+                document.getElementById('editEntryType').value = data.type;
+                document.getElementById('editRemarks').value = data.remarks || '';
+                document.getElementById('editIssuedBy').value = data.issued_by || '';
+                document.getElementById('editReceivedBy').value = data.received_by || '';
+                document.getElementById('editCheckedBy').value = data.checked_by;
+                
+                new bootstrap.Modal(document.getElementById('editLogbookModal')).show();
+            } else {
+                showError('Logbook entry not found.');
+            }
+        })
+        .catch(error => {
+            showError('An error occurred while fetching logbook entry details.');
+        });
+    }
+
+    // Update logbook entry
+    function updateLogbookEntry() {
+        const entryId = document.getElementById('editEntryId').value;
+        const formData = {
+            date: document.getElementById('editEntryDate').value,
+            material_name: document.getElementById('editMaterialName').value,
+            description: document.getElementById('editDescription').value,
+            quantity: parseFloat(document.getElementById('editQuantity').value),
+            unit: document.getElementById('editUnit').value,
+            type: document.getElementById('editEntryType').value,
+            remarks: document.getElementById('editRemarks').value,
+            issued_by: document.getElementById('editIssuedBy').value,
+            received_by: document.getElementById('editReceivedBy').value,
+            checked_by: document.getElementById('editCheckedBy').value
+        };
+
+        // Basic validation
+        if (!formData.date || !formData.material_name || !formData.quantity || !formData.unit || !formData.type || !formData.checked_by) {
+            showError('Please fill in all required fields.');
+            return;
+        }
+
+        fetch(`/api/material-logbook/${entryId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showSuccess(data.message);
+                bootstrap.Modal.getInstance(document.getElementById('editLogbookModal')).hide();
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showError(data.message);
+            }
+        })
+        .catch(error => {
+            showError('An error occurred while updating the logbook entry.');
+        });
+    }
+
+    // Delete logbook entry
+    function deleteLogbookEntry(entryId) {
+        confirmDelete(() => {
+            fetch(`/api/material-logbook/${entryId}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showSuccess(data.message);
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showError(data.message);
+                }
+            })
+            .catch(error => {
+                showError('An error occurred while deleting the logbook entry.');
+            });
+        });
+    }
+
+    // Refresh logbook
+    function refreshLogbook() {
+        location.reload();
+    }
+</script>
+{% endblock %}
