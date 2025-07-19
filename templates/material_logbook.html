@@ -79,7 +79,7 @@
         <div class="stats-card">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h3 class="mb-0">{{ (logbook_entries|selectattr('1', 'ge', (moment().subtract(7, 'days').format('YYYY-MM-DD')))|list|length) if logbook_entries else 0 }}</h3>
+                    <h3 class="mb-0">{{ filtered_count }}</h3>
                     <p class="mb-0">This Week</p>
                 </div>
                 <i class="bi bi-calendar-week fs-1"></i>

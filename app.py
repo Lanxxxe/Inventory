@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session, flash
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 import base64
 from werkzeug.utils import secure_filename
@@ -225,7 +225,26 @@ def material_logbook():
     cursor.execute('SELECT * FROM material_logbook ORDER BY date DESC, created_at DESC')
     logbook_entries = cursor.fetchall()
     conn.close()
-    return render_template('material_logbook.html', logbook_entries=logbook_entries)
+
+    # Filter entries from the last 7 days
+    seven_days_ago = datetime.now() - timedelta(days=7)
+    filtered_entries = []
+
+    for entry in logbook_entries:
+        try:
+            # Assuming the 'date' column is at index 1, and is in 'YYYY-MM-DD' format
+            entry_date = datetime.strptime(entry[1], '%Y-%m-%d')
+            if entry_date >= seven_days_ago:
+                filtered_entries.append(entry)
+        except Exception as e:
+            # Skip entries with invalid dates
+            continue
+
+    filtered_count = len(filtered_entries)
+
+    return render_template('material_logbook.html',
+                           logbook_entries=logbook_entries,
+                           filtered_count=filtered_count)
 
 # API Routes for CRUD operations
 @app.route('/api/inventory', methods=['POST'])
